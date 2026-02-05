@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Clock, CheckCircle, User, X, UserCheck, CalendarClock, Unlock } from 'lucide-react';
-import type { Table, Waiter } from '../types';
+import type { Table, User as UserType } from '../types';
 import * as api from '../services/api';
 
 interface TablesViewProps {
   tables: Table[];
-  waiter: Waiter;
+  waiter: UserType;
   onTableSelect: (table: Table) => void;
-  onUpdateTable?: (table: Table) => void;
+  onUpdateTable: (table: Table) => void;
 }
 
 type FilterStatus = 'all' | 'available' | 'occupied' | 'reserved';
@@ -159,8 +159,8 @@ export function TablesView({ tables, waiter, onTableSelect, onUpdateTable }: Tab
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {filteredTables.map((table) => {
-          const assignedWaiter = table.waiterId 
-            ? api.getWaiterById(table.waiterId)
+          const assignedUser = table.waiterId 
+            ? api.getUserById(table.waiterId)
             : null;
           
           return (
@@ -198,9 +198,9 @@ export function TablesView({ tables, waiter, onTableSelect, onUpdateTable }: Tab
                     )}
                   </div>
                   <div className="h-5 mt-0.5">
-                    {assignedWaiter && (
+                    {assignedUser && (
                       <div className="text-xs text-gray-600 font-medium">
-                        👤 {assignedWaiter.name}
+                        👤 {assignedUser.name}
                       </div>
                     )}
                   </div>

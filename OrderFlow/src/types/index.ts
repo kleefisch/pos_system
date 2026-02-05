@@ -1,10 +1,18 @@
 // User & Authentication Types
-export interface Waiter {
+export interface User {
   id: string;
   name: string;
   username: string;
-  password: string;
   role: 'waiter' | 'kitchen' | 'manager';
+}
+
+export interface AuthCredentials {
+  username: string;
+  password: string;
+}
+
+export interface CreateUserDTO extends User {
+  password: string;
 }
 
 // Menu & Items Types

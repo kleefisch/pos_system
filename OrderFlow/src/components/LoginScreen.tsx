@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { LogIn, User, ChefHat, Shield, Eye, EyeOff } from 'lucide-react';
 import { OrderFlowLogo } from './OrderFlowLogo';
-import type { Waiter } from '../types';
+import type { User as UserType } from '../types';
 import * as api from '../services/api';
 
 interface LoginScreenProps {
-  onLogin: (waiter: Waiter, role: 'waiter' | 'kitchen' | 'manager') => void;
+  onLogin: (user: UserType, role: 'waiter' | 'kitchen' | 'manager') => void;
 }
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -20,7 +20,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     e.preventDefault();
     setIsLoading(true);
     
-    const result = await api.login(username, password, loginType);
+    const result = await api.login({ username, password }, loginType);
     
     setIsLoading(false);
     

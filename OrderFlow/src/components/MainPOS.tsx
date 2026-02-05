@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LogOut, UtensilsCrossed, ChefHat, LayoutDashboard, Users, Package, Settings } from 'lucide-react';
-import type { Waiter, Table, ViewType, TabType } from '../types';
+import type { User, Table, ViewType, TabType } from '../types';
 import { OrderFlowLogo } from './OrderFlowLogo';
 import { TablesView } from './TablesView';
 import { OrderView } from './OrderView';
@@ -13,16 +13,16 @@ import { TableSetupView } from './TableSetupView';
 import * as api from '../services/api';
 
 interface MainPOSProps {
-  waiter: Waiter;
+  user: User;
   role: 'waiter' | 'kitchen' | 'manager';
   onLogout: () => void;
 }
 
-export function MainPOS({ waiter, role, onLogout }: MainPOSProps) {
+export function MainPOS({ user, role, onLogout }: MainPOSProps) {
   const [currentView, setCurrentView] = useState<ViewType>('tables');
   const [activeTab, setActiveTab] = useState<TabType>(role === 'manager' ? 'dashboard' : 'tables');
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
-  const [users, setUsers] = useState<Waiter[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
 
   // Load initial data
@@ -103,7 +103,7 @@ export function MainPOS({ waiter, role, onLogout }: MainPOSProps) {
           <OrderFlowLogo size="md" />
           <div className="flex items-center space-x-3">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold text-gray-800">{waiter.name}</p>
+              <p className="text-sm font-semibold text-gray-800">{user.name}</p>
               <p className="text-xs text-gray-600 capitalize">{role}</p>
             </div>
             <button
@@ -122,7 +122,7 @@ export function MainPOS({ waiter, role, onLogout }: MainPOSProps) {
         {activeTab === 'tables' && currentView === 'tables' && (
           <TablesView
             tables={tables}
-            waiter={waiter}
+            waiter={user}
             onTableSelect={handleTableSelect}
             onUpdateTable={handleUpdateTable}
           />
@@ -228,7 +228,7 @@ export function MainPOS({ waiter, role, onLogout }: MainPOSProps) {
         {currentView === 'order' && selectedTable && (
           <OrderView
             table={selectedTable}
-            waiter={waiter}
+            waiter={user}
             onUpdateTable={handleUpdateTable}
             onBack={handleBackToTables}
             onGoToPayment={handleGoToPayment}

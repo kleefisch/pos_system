@@ -1,28 +1,28 @@
 import { useState } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { MainPOS } from './components/MainPOS';
-import type { Waiter } from './types';
+import type { User } from './types';
 
 function App() {
-  const [currentWaiter, setCurrentWaiter] = useState<Waiter | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<'waiter' | 'kitchen' | 'manager' | null>(null);
 
-  const handleLogin = (waiter: Waiter, role: 'waiter' | 'kitchen' | 'manager') => {
-    setCurrentWaiter(waiter);
+  const handleLogin = (user: User, role: 'waiter' | 'kitchen' | 'manager') => {
+    setCurrentUser(user);
     setUserRole(role);
   };
 
   const handleLogout = () => {
-    setCurrentWaiter(null);
+    setCurrentUser(null);
     setUserRole(null);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {!currentWaiter ? (
+      {!currentUser ? (
         <LoginScreen onLogin={handleLogin} />
       ) : (
-        <MainPOS waiter={currentWaiter} role={userRole!} onLogout={handleLogout} />
+        <MainPOS user={currentUser} role={userRole!} onLogout={handleLogout} />
       )}
     </div>
   );

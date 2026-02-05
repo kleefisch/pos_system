@@ -16,6 +16,7 @@ export function MenuSetupView({ onMenuUpdate }: MenuSetupViewProps) {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [categoryName, setCategoryName] = useState('');
+  const [isTogglingId, setIsTogglingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -143,16 +144,33 @@ export function MenuSetupView({ onMenuUpdate }: MenuSetupViewProps) {
 
   const handleDelete = async (itemId: string) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      await api.deleteMenuItem(itemId);
-      await loadData();
-      onMenuUpdate?.();
+      try {
+        console.log('Deleting item:', itemId);
+        await api.deleteMenuItem(itemId);
+        console.log('Item deleted successfully');
+        await loadData();
+        onMenuUpdate?.();
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        alert('Failed to delete item');
+      }
     }
   };
 
   const handleToggleAvailability = async (itemId: string) => {
-    await api.toggleMenuItemAvailability(itemId);
-    await loadData();
-    onMenuUpdate?.();
+    try {
+      console.log('Toggling availability for item:', itemId);
+      setIsTogglingId(itemId);
+      const updatedItem = await api.toggleMenuItemAvailability(itemId);
+      console.log('Updated item:', updatedItem);
+      await loadData();
+      onMenuUpdate?.();
+    } catch (error) {
+      console.error('Error toggling availability:', error);
+      alert('Failed to update item availability');
+    } finally {
+      setIsTogglingId(null);
+    }
   };
 
   const filteredItems = selectedCategory === 'all' 
@@ -302,7 +320,12 @@ export function MenuSetupView({ onMenuUpdate }: MenuSetupViewProps) {
                 {/* Actions */}
                 <div className="flex items-center space-x-2 mt-3">
                   <button
-                    onClick={() => handleToggleAvailability(item.id)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleToggleAvailability(item.id);
+                    }}
                     className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                       item.available === false
                         ? 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -322,13 +345,23 @@ export function MenuSetupView({ onMenuUpdate }: MenuSetupViewProps) {
                     )}
                   </button>
                   <button
-                    onClick={() => handleOpenForm(item)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleOpenForm(item);
+                    }}
                     className="p-1.5 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(item.id)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDelete(item.id);
+                    }}
                     className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />

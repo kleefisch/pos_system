@@ -11,33 +11,75 @@
  * 4. Add request/response interceptors for global error handling
  */
 
-import type { Table, Waiter, MenuItem, Order } from '../types';
+import type { Table, User, CreateUserDTO, AuthCredentials, MenuItem, Order } from '../types';
 import { MENU_ITEMS } from '../data/menuData';
+
+// ============================================
+// API CONFIGURATION
+// ============================================
+
+const API_BASE_URL = 'http://localhost:5000/api';
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+/**
+ * Convert date strings from API to Date objects
+ */
+function mapOrderDates(order: any): Order {
+  return {
+    ...order,
+    createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
+    sentAt: order.sentAt ? new Date(order.sentAt) : undefined,
+    preparingAt: order.preparingAt ? new Date(order.preparingAt) : undefined,
+    doneAt: order.doneAt ? new Date(order.doneAt) : undefined,
+    deliveredAt: order.deliveredAt ? new Date(order.deliveredAt) : undefined,
+  };
+}
+
+/**
+ * Convert table data with date conversions for orders
+ */
+function mapTableDates(table: any): Table {
+  return {
+    ...table,
+    orders: table.orders.map(mapOrderDates)
+  };
+}
 
 // ============================================
 // MOCK DATA
 // ============================================
 
-const MOCK_WAITERS: Waiter[] = [
-  { id: '1', name: 'John Silva', username: 'john', password: 'waiter123', role: 'waiter' },
-  { id: '2', name: 'Mary Santos', username: 'mary', password: 'waiter123', role: 'waiter' },
-  { id: '3', name: 'Peter Johnson', username: 'peter', password: 'waiter123', role: 'waiter' },
-  { id: '4', name: 'Anna Costa', username: 'anna', password: 'waiter123', role: 'waiter' },
+const MOCK_USERS: User[] = [
+  { id: '1', name: 'John Silva', username: 'john', role: 'waiter' },
+  { id: '2', name: 'Mary Santos', username: 'mary', role: 'waiter' },
+  { id: '3', name: 'Peter Johnson', username: 'peter', role: 'waiter' },
+  { id: '4', name: 'Anna Costa', username: 'anna', role: 'waiter' },
 ];
 
-const KITCHEN_USER: Waiter = {
+// Internal password storage (mock only - in production, handled by backend)
+const MOCK_PASSWORDS: Record<string, string> = {
+  '1': 'waiter123',
+  '2': 'waiter123',
+  '3': 'waiter123',
+  '4': 'waiter123',
+  'kitchen': 'kitchen123',
+  'manager': 'admin123'
+};
+
+const KITCHEN_USER: User = {
   id: 'kitchen',
   name: 'Kitchen',
   username: 'kitchen',
-  password: 'kitchen123',
   role: 'kitchen'
 };
 
-const MANAGER_USER: Waiter = {
+const MANAGER_USER: User = {
   id: 'manager',
   name: 'Admin Manager',
   username: 'admin',
-  password: 'admin123',
   role: 'manager'
 };
 
@@ -57,7 +99,7 @@ const INITIAL_TABLES: Table[] = [
           { id: '8', name: 'Espresso Coffee', category: 'Beverages', price: 8.90, image: '', description: 'Traditional espresso', quantity: 2 }
         ],
         status: 'pending',
-        createdAt: new Date(Date.now() - 5 * 60000), // 5 minutes ago
+        createdAt: new Date(Date.now() - 5 * 60000),
         sentAt: new Date(Date.now() - 5 * 60000)
       }
     ], 
@@ -76,9 +118,9 @@ const INITIAL_TABLES: Table[] = [
           { id: '9', name: 'Orange Juice', category: 'Beverages', price: 12.90, image: '', description: 'Fresh orange juice', quantity: 1 }
         ],
         status: 'preparing',
-        createdAt: new Date(Date.now() - 15 * 60000), // 15 minutes ago
+        createdAt: new Date(Date.now() - 15 * 60000),
         sentAt: new Date(Date.now() - 15 * 60000),
-        preparingAt: new Date(Date.now() - 10 * 60000) // started preparing 10 min ago
+        preparingAt: new Date(Date.now() - 10 * 60000)
       }
     ], 
     waiterId: '2' 
@@ -96,11 +138,11 @@ const INITIAL_TABLES: Table[] = [
           { id: '6', name: 'Pasta Carbonara', category: 'Main Courses', price: 48.90, image: '', description: 'Fresh pasta with creamy sauce', quantity: 3 },
           { id: '11', name: 'House Cocktail', category: 'Beverages', price: 28.90, image: '', description: 'Special cocktail', quantity: 4 }
         ],
-        status: 'ready',
-        createdAt: new Date(Date.now() - 25 * 60000), // 25 minutes ago
+        status: 'done',
+        createdAt: new Date(Date.now() - 25 * 60000),
         sentAt: new Date(Date.now() - 25 * 60000),
         preparingAt: new Date(Date.now() - 20 * 60000),
-        readyAt: new Date(Date.now() - 2 * 60000) // ready 2 min ago
+        doneAt: new Date(Date.now() - 2 * 60000)
       }
     ], 
     waiterId: '2' 
@@ -122,7 +164,7 @@ const INITIAL_TABLES: Table[] = [
           { id: '10', name: 'Soda', category: 'Beverages', price: 8.00, image: '', description: 'Can 350ml', quantity: 3 }
         ],
         status: 'pending',
-        createdAt: new Date(Date.now() - 2 * 60000), // 2 minutes ago
+        createdAt: new Date(Date.now() - 2 * 60000),
         sentAt: new Date(Date.now() - 2 * 60000)
       }
     ], 
@@ -139,14 +181,14 @@ const INITIAL_TABLES: Table[] = [
       {
         id: 'ord-003',
         items: [
-          { ...MENU_ITEMS[6], quantity: 2 }, // 2x Chocolate Cake
-          { ...MENU_ITEMS[9], quantity: 2 }  // 2x Espresso
+          { ...MENU_ITEMS[6], quantity: 2 },
+          { ...MENU_ITEMS[9], quantity: 2 }
         ],
         status: 'done',
         createdAt: new Date(Date.now() - 30 * 60000),
         sentAt: new Date(Date.now() - 25 * 60000),
         preparingAt: new Date(Date.now() - 20 * 60000),
-        doneAt: new Date(Date.now() - 2 * 60000) // done 2 min ago
+        doneAt: new Date(Date.now() - 2 * 60000)
       }
     ], 
     waiterId: '4' 
@@ -154,7 +196,7 @@ const INITIAL_TABLES: Table[] = [
 ];
 
 // In-memory storage (will be replaced by backend)
-let users: Waiter[] = [...MOCK_WAITERS];
+let users: User[] = [...MOCK_USERS];
 let tables: Table[] = [...INITIAL_TABLES];
 let menuItems: MenuItem[] = [...MENU_ITEMS];
 let categories: string[] = ['Appetizers', 'Main Courses', 'Beverages', 'Desserts'];
@@ -171,30 +213,31 @@ let categories: string[] = ['Appetizers', 'Main Courses', 'Beverages', 'Desserts
  * - Returns JWT token and user data
  */
 export async function login(
-  username: string,
-  password: string,
+  credentials: AuthCredentials,
   loginType: 'waiter' | 'kitchen' | 'manager'
-): Promise<{ success: boolean; user?: Waiter; role?: 'waiter' | 'kitchen' | 'manager'; error?: string }> {
+): Promise<{ success: boolean; user?: User; role?: 'waiter' | 'kitchen' | 'manager'; error?: string }> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));
 
+  const { username, password } = credentials;
+
   if (loginType === 'kitchen') {
-    if (username === KITCHEN_USER.username && password === KITCHEN_USER.password) {
+    if (username === KITCHEN_USER.username && password === MOCK_PASSWORDS['kitchen']) {
       return { success: true, user: KITCHEN_USER, role: 'kitchen' };
     }
     return { success: false, error: 'Invalid credentials. Try: kitchen / kitchen123' };
   }
 
   if (loginType === 'manager') {
-    if (username === MANAGER_USER.username && password === MANAGER_USER.password) {
+    if (username === MANAGER_USER.username && password === MOCK_PASSWORDS['manager']) {
       return { success: true, user: MANAGER_USER, role: 'manager' };
     }
     return { success: false, error: 'Invalid credentials. Try: admin / admin123' };
   }
 
-  const waiter = users.find(w => w.username === username && w.password === password);
-  if (waiter) {
-    return { success: true, user: waiter, role: 'waiter' };
+  const user = users.find(u => u.username === username);
+  if (user && MOCK_PASSWORDS[user.id] === password) {
+    return { success: true, user, role: 'waiter' };
   }
 
   return { success: false, error: 'Invalid credentials. Try: john / waiter123' };
@@ -213,6 +256,9 @@ export async function login(
 export async function getTables(): Promise<Table[]> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 200));
+  // In production: const response = await fetch(`${API_BASE_URL}/tables`);
+  // const data = await response.json();
+  // return data.map(mapTableDates);
   return [...tables];
 }
 
@@ -335,14 +381,15 @@ export async function updateOrderStatus(
 // ============================================
 
 /**
- * Get all users
+ * Get all users (without passwords)
  * 
  * Backend replacement:
  * - GET /api/users
  */
-export async function getUsers(): Promise<Waiter[]> {
+export async function getUsers(): Promise<User[]> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 200));
+  // Return users without password field
   return [...users];
 }
 
@@ -352,11 +399,20 @@ export async function getUsers(): Promise<Waiter[]> {
  * Backend replacement:
  * - POST /api/users
  */
-export async function createUser(user: Waiter): Promise<Waiter> {
+export async function createUser(userDTO: CreateUserDTO): Promise<User> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 200));
   
+  // Extract password and create user object without it
+  const { password, ...user } = userDTO;
+  
+  // Store password separately (mock only)
+  MOCK_PASSWORDS[user.id] = password;
+  
+  // Add user to list
   users.push(user);
+  
+  // Return user without password
   return user;
 }
 
@@ -366,16 +422,23 @@ export async function createUser(user: Waiter): Promise<Waiter> {
  * Backend replacement:
  * - PUT /api/users/:id
  */
-export async function updateUser(updatedUser: Waiter): Promise<Waiter> {
+export async function updateUser(userId: string, updates: Partial<User>, newPassword?: string): Promise<User> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 200));
   
-  const index = users.findIndex(u => u.id === updatedUser.id);
+  const index = users.findIndex(u => u.id === userId);
   if (index !== -1) {
-    users[index] = updatedUser;
+    users[index] = { ...users[index], ...updates };
+    
+    // Update password if provided
+    if (newPassword) {
+      MOCK_PASSWORDS[userId] = newPassword;
+    }
+    
+    return users[index];
   }
   
-  return updatedUser;
+  throw new Error('User not found');
 }
 
 /**
@@ -391,6 +454,7 @@ export async function deleteUser(userId: string): Promise<boolean> {
   const index = users.findIndex(u => u.id === userId);
   if (index !== -1) {
     users.splice(index, 1);
+    delete MOCK_PASSWORDS[userId];
     return true;
   }
   
@@ -405,7 +469,7 @@ export async function deleteUser(userId: string): Promise<boolean> {
  * Reset all data to initial state (useful for testing)
  */
 export function resetData(): void {
-  users = [...MOCK_WAITERS];
+  users = [...MOCK_USERS];
   tables = [...INITIAL_TABLES];
   menuItems = [...MENU_ITEMS];
 }
@@ -414,14 +478,14 @@ export function resetData(): void {
  * Get all users including special accounts (kitchen, manager)
  * Useful for login screen
  */
-export function getAllUsers(): Waiter[] {
+export function getAllUsers(): User[] {
   return [...users, KITCHEN_USER, MANAGER_USER];
 }
 
 /**
- * Get a specific waiter by ID (including special accounts)
+ * Get a specific user by ID (including special accounts)
  */
-export function getWaiterById(id: string): Waiter | null {
+export function getUserById(id: string): User | null {
   const allUsers = [...users, KITCHEN_USER, MANAGER_USER];
   return allUsers.find(u => u.id === id) || null;
 }

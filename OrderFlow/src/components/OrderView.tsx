@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { ArrowLeft, Send, Plus, CheckCircle, Clock, ChefHat } from 'lucide-react';
-import type { Table, Waiter, OrderItem, Order } from '../types';
+import type { Table, User, OrderItem, Order } from '../types';
 import { MenuList } from './MenuList';
-import { OrderCart } from './OrderCart';
+import { OrderSummary } from './OrderSummary';
 
 interface OrderViewProps {
   table: Table;
-  waiter: Waiter;
+  waiter: User;
   onUpdateTable: (table: Table) => void;
   onBack: () => void;
   onGoToPayment: () => void;
@@ -200,7 +200,7 @@ export function OrderView({ table, waiter, onUpdateTable, onBack, onGoToPayment 
             {currentOrderItems.length > 0 ? 'New Items' : 'Add Items'}
           </h3>
           
-          <OrderCart
+          <OrderSummary
             orders={currentOrderItems}
             onUpdateItem={handleUpdateItem}
             onRemoveItem={handleRemoveItem}
